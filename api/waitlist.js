@@ -15,7 +15,7 @@ module.exports = async function (req, res) {
     const email = L.str(b.email, 254) ? L.str(b.email, 254).toLowerCase() : '';
     if (!L.EMAIL_RE.test(email)) return L.json(res, 400, { ok: false, error: 'Bitte gib eine gültige E-Mail-Adresse ein.' });
 
-    const variant = b.variant === 'b' ? 'b' : 'a';
+    const variant = ['a', 'b', 'c'].indexOf(b.variant) >= 0 ? b.variant : 'a';
     const earlyBird = b.early_bird === true;
     const utm = {};
     if (b.utm && typeof b.utm === 'object') {

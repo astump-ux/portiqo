@@ -10,7 +10,7 @@ module.exports = async function (req, res) {
   try {
     const b = await L.readJson(req);
     if (EVENTS.indexOf(b.event) >= 0) {
-      const variant = b.variant === 'b' ? 'b' : 'a';
+      const variant = ['a', 'b', 'c'].indexOf(b.variant) >= 0 ? b.variant : 'a';
       await L.sql()`INSERT INTO marketing.lp_events (event, variant, utm_source, utm_campaign)
                     VALUES (${b.event}, ${variant}, ${L.str(b.utm_source, 100)}, ${L.str(b.utm_campaign, 100)})`;
     }
