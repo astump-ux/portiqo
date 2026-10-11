@@ -1,10 +1,11 @@
 // POST /api/survey — optionaler Fragebogen nach der Anmeldung.
-// Body: { token, stocks?, first?, tools?[], early_bird? } — Felder werden zusammengeführt.
+// Body: { token, stocks?, first?, cadence?, tools?[], early_bird? } — Felder werden zusammengeführt.
 const L = require('./_lib');
 
 const ALLOWED = {
   stocks: ['keine', '1–5', '6–15', '16–30', 'über 30'],
   first: ['Ereignis-Monitoring', 'Morgen-Briefing', 'Analysen', 'Eigene Regeln'],
+  cadence: ['jeden Börsentag', 'einmal pro Woche', 'nur bei Signalen'],
   early_bird: ['ja', 'vielleicht', 'nein'],
   tools: ['Parqet', 'getquin', 'Finanzfluss Copilot', 'Excel', 'App vom Broker', 'nichts', 'anderes']
 };
@@ -16,7 +17,7 @@ module.exports = async function (req, res) {
     const tok = L.str(b.token, 64);
     if (!tok) return L.json(res, 400, { ok: false });
     const data = {};
-    ['stocks', 'first', 'early_bird'].forEach(function (k) {
+    ['stocks', 'first', 'cadence', 'early_bird'].forEach(function (k) {
       if (ALLOWED[k].indexOf(b[k]) >= 0) data[k] = b[k];
     });
     if (Array.isArray(b.tools)) data.tools = b.tools.filter(function (t) { return ALLOWED.tools.indexOf(t) >= 0; }).slice(0, 7);
