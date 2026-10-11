@@ -1,10 +1,23 @@
 <!doctype html>
-<html lang="en">
+<html lang="de">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="Portiqo — daily portfolio news, AI stock analyses and target-price alerts.">
-<title>Portiqo</title>
+<meta name="description" content="Portiqo legt für jede deiner Aktien fest, welche Ereignisse über die These entscheiden, prüft sie automatisch und meldet sich morgens, wenn es so weit ist.">
+<title>Portiqo – Monitoring für deine Aktien</title>
+<meta property="og:title" content="Portiqo – Wissen, was passieren muss. Erfahren, wenn es passiert.">
+<meta property="og:description" content="Ereignis-Monitoring und Morgen-Briefing für Einzelaktien-Anleger. Jetzt auf die Warteliste.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://portiqo.ai/">
+<script>
+  // A/B/C-Variante: ?v=a|b|c erzwingt (z. B. für Anzeigen), sonst je 1/3 pro Seitenaufruf.
+  // Bewusst ohne Cookie/localStorage (kein Einwilligungsbanner nötig).
+  (function(){
+    var m = location.search.match(/[?&]v=(a|b|c)\b/);
+    var v = m ? m[1] : ['a','b','c'][Math.floor(Math.random() * 3)];
+    document.documentElement.setAttribute('data-v', v);
+  })();
+</script>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
@@ -14,6 +27,7 @@
     --text:#0f172a; --muted:#64748b; --line:#e2e8f0;
     --accent:#2563eb; --accent-ink:#1d4ed8; --accent-soft:#e6eeff;
     --up:#16a34a; --down:#dc2626; --amber:#d97706;
+    --up-soft:#e8f7ee; --amber-soft:#fdf3e2;
     --on-hero:#f8fafc; --on-hero-muted:#94a3b8;
     --radius:14px; --maxw:1080px;
     --f-display:"Sora",system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
@@ -27,7 +41,7 @@
       --text:#e6edf6; --muted:#94a3b8; --line:#1e293b;
       --accent:#3b82f6; --accent-ink:#93b4f5; --accent-soft:#132a52;
       --up:#4ade80; --down:#f87171; --amber:#f59e0b;
-      --on-hero:#f8fafc; --on-hero-muted:#94a3b8;
+      --up-soft:#10291c; --amber-soft:#2a2112;
     }
   }
   :root[data-theme="dark"]{
@@ -36,10 +50,20 @@
     --text:#e6edf6; --muted:#94a3b8; --line:#1e293b;
     --accent:#3b82f6; --accent-ink:#93b4f5; --accent-soft:#132a52;
     --up:#4ade80; --down:#f87171; --amber:#f59e0b;
-    --on-hero:#f8fafc; --on-hero-muted:#94a3b8;
+    --up-soft:#10291c; --amber-soft:#2a2112;
   }
 
+  /* Variante a = Monitoring (Mechanik), b = Morgen-Briefing, c = Wissen/Handeln/Schlafen */
+  [data-v="a"] .vb,[data-v="a"] .vc,[data-v="b"] .va,[data-v="b"] .vc,[data-v="c"] .va,[data-v="c"] .vb{display:none !important;}
+  .beats{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:40px;}
+  .beat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:24px 22px;}
+  .beat .bn{font-family:var(--f-mono);font-size:12px;font-weight:600;color:var(--accent-ink);letter-spacing:.08em;margin:0 0 10px;}
+  .beat h3{font-size:20px;font-weight:800;margin-bottom:8px}
+  .beat p{color:var(--muted);font-size:14.5px;margin:0}
+  @media (max-width:820px){ .beats{grid-template-columns:1fr;} }
+
   *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
   body{margin:0;background:var(--bg);color:var(--text);font-family:var(--f-body);
     line-height:1.55;-webkit-font-smoothing:antialiased;}
   h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;letter-spacing:-.01em;}
@@ -52,102 +76,176 @@
   .nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;
     background:color-mix(in srgb, var(--hero) 88%, transparent);
     backdrop-filter:blur(10px);border-bottom:1px solid var(--hero-line);}
-  .nav .row{display:flex;align-items:center;justify-content:space-between;
-    padding-block:14px;}
-  .brand{display:flex;align-items:center;gap:9px;color:var(--on-hero);
+  .nav .row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:14px;}
+  .brand{display:flex;align-items:center;gap:9px;color:var(--on-hero);text-decoration:none;
     font-family:var(--f-display);font-weight:800;font-size:19px;letter-spacing:-.02em;}
   .logo{width:26px;height:26px;border-radius:7px;display:block;}
-  .btn{display:inline-flex;align-items:center;gap:7px;border-radius:10px;
-    padding:10px 16px;font-weight:600;font-size:14px;text-decoration:none;
+  .nav .links{display:flex;align-items:center;gap:6px;}
+  .nav .login{color:var(--on-hero-muted);font-size:14px;text-decoration:none;padding:8px 10px;}
+  .nav .login:hover{color:#fff}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border-radius:10px;
+    padding:11px 16px;font-weight:600;font-size:14.5px;text-decoration:none;font-family:inherit;
     border:1px solid transparent;cursor:pointer;white-space:nowrap;}
   .btn-primary{background:var(--accent);color:#fff;}
   .btn-primary:hover{filter:brightness(1.07)}
+  .btn-primary[disabled]{opacity:.6;cursor:wait}
   .btn-ghost{background:transparent;color:var(--on-hero);border-color:var(--hero-line);}
   .btn-ghost:hover{background:var(--hero-2)}
-  .btn-dark{background:var(--hero);color:var(--on-hero);}
+  .btn-line{background:transparent;color:var(--accent-ink);border-color:color-mix(in srgb,var(--accent) 40%, var(--line));}
+  .btn-line:hover{background:var(--accent-soft)}
 
   /* HERO */
-  .hero{background:
-      radial-gradient(120% 120% at 85% -10%, var(--hero-2) 0%, var(--hero) 55%);
+  .hero{background:radial-gradient(120% 120% at 85% -10%, var(--hero-2) 0%, var(--hero) 55%);
     color:var(--on-hero);border-bottom:1px solid var(--hero-line);}
-  .hero .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:44px;
-    align-items:center;padding-block:64px 72px;}
+  .hero .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:44px;align-items:center;padding-block:60px 70px;}
   .eyebrow{font-family:var(--f-mono);text-transform:uppercase;letter-spacing:.18em;
     font-size:11px;color:var(--on-hero-muted);margin:0 0 18px;}
-  .hero h1{font-size:clamp(32px,5vw,52px);font-weight:800;line-height:1.05;color:#fff;}
-  .hero p.lead{color:#cdd6e4;font-size:clamp(16px,1.5vw,18px);margin:20px 0 0;max-width:36ch;}
-  .cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px;}
-  .trust{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:26px;
-    font-size:12.5px;color:var(--on-hero-muted);}
-  .trust span{display:inline-flex;align-items:center;gap:7px;}
-  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
-  .d-g{background:#22c55e}.d-y{background:#f59e0b}.d-r{background:#f87171}
+  .badge{display:inline-flex;align-items:center;gap:8px;font-family:var(--f-mono);font-size:11px;
+    letter-spacing:.08em;text-transform:uppercase;color:#cdd6e4;border:1px solid var(--hero-line);
+    background:var(--hero-2);border-radius:999px;padding:5px 11px;margin-bottom:18px;}
+  .badge .dot{width:7px;height:7px}
+  .hero h1{font-size:clamp(31px,4.8vw,50px);font-weight:800;line-height:1.07;color:#fff;}
+  .hero p.lead{color:#cdd6e4;font-size:clamp(16px,1.5vw,18px);margin:20px 0 0;max-width:40ch;}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
+  .d-g{background:#22c55e}.d-y{background:#f59e0b}.d-r{background:#f87171}.d-b{background:#3b82f6}
 
-  /* HERO CARD (Daily News mock) */
+  /* SIGNUP FORM */
+  .signup{margin-top:28px;max-width:470px;}
+  .signup .fr{display:flex;gap:8px;}
+  .signup input[type=email]{flex:1;min-width:0;font:inherit;font-size:15px;padding:12px 14px;border-radius:10px;
+    border:1px solid var(--hero-line);background:#0b1426;color:#fff;}
+  .signup input[type=email]::placeholder{color:#7d8aa1}
+  .signup input[type=email]:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+  .signup .hint{font-size:12.5px;color:var(--on-hero-muted);margin:10px 0 0;line-height:1.5;}
+  .signup .hint a{color:#cdd6e4}
+  .signup .err{color:#fca5a5;font-size:13px;margin:8px 0 0;min-height:0}
+  .eb-flag{display:none;margin:0 0 10px;font-size:13px;color:#cdd6e4;align-items:center;gap:8px;}
+  .eb-flag.on{display:flex}
+  .eb-flag b{color:#fff}
+  .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+  .light .signup input[type=email]{background:var(--surface);color:var(--text);border-color:var(--line)}
+  .light .signup input[type=email]::placeholder{color:var(--muted)}
+  .light .signup .hint{color:var(--muted)} .light .signup .hint a{color:var(--accent-ink)}
+  .light .signup .err{color:var(--down)}
+  .light .eb-flag{color:var(--muted)} .light .eb-flag b{color:var(--text)}
+
+  .trust{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:24px;font-size:12.5px;color:var(--on-hero-muted);}
+  .trust span{display:inline-flex;align-items:center;gap:7px;}
+
+  /* SUCCESS + SURVEY */
+  .done{display:none;margin-top:28px;max-width:520px;background:var(--surface);color:var(--text);
+    border-radius:16px;border:1px solid var(--line);padding:22px;box-shadow:0 24px 60px -24px rgba(2,8,23,.6);}
+  .done.on{display:block}
+  .done h3{font-size:18px}
+  .done p{margin:8px 0 0;color:var(--muted);font-size:14.5px}
+  .survey{margin-top:18px;border-top:1px solid var(--line);padding-top:16px;}
+  .survey .q{margin:0 0 14px}
+  .survey .ql{font-weight:600;font-size:14px;margin:0 0 7px;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .chips label{position:relative}
+  .chips input{position:absolute;opacity:0;pointer-events:none}
+  .chips span{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:5px 11px;
+    font-size:13px;cursor:pointer;background:var(--surface-2);user-select:none}
+  .chips input:checked + span{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 50%, var(--line));color:var(--accent-ink);font-weight:600}
+  .chips input:focus-visible + span{outline:2px solid var(--accent);outline-offset:2px}
+  .survey .thanks{display:none;color:var(--up);font-weight:600;font-size:14px;margin:8px 0 0}
+
+  /* HERO CARD (Beispiel-Mail) */
   .card{background:var(--surface);color:var(--text);border-radius:16px;
     box-shadow:0 24px 60px -24px rgba(2,8,23,.6);overflow:hidden;border:1px solid var(--line);}
-  .card .chd{background:var(--hero);padding:14px 16px;color:#fff;}
+  .card .chd{background:var(--hero);padding:14px 16px;color:#fff;display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
   .card .chd .k{font-family:var(--f-mono);font-size:11px;color:#94a3b8;letter-spacing:.04em;}
   .card .chd .t{font-family:var(--f-display);font-weight:700;font-size:15px;margin-top:2px;}
-  .qrow{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;
-    padding:12px 16px;border-top:1px solid var(--line);}
-  .qrow:first-of-type{border-top:0}
+  .card .ex{font-family:var(--f-mono);font-size:10px;color:#94a3b8;border:1px solid #334155;border-radius:999px;padding:2px 8px;white-space:nowrap}
+  .sigs{padding:12px 16px 4px;}
+  .sigs .lbl{font-family:var(--f-mono);font-size:10.5px;font-weight:700;letter-spacing:.1em;color:var(--accent-ink);margin:0 0 8px;text-transform:uppercase}
+  .sig{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;}
+  .sig.ok{background:var(--up-soft);border-color:color-mix(in srgb,var(--up) 30%, var(--line))}
+  .sig.warn{background:var(--amber-soft);border-color:color-mix(in srgb,var(--amber) 35%, var(--line))}
+  .sig .top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+  .sig .ev{font-size:13.5px;font-weight:600;margin-top:2px}
+  .sig .res{font-family:var(--f-mono);font-size:11.5px;font-weight:600;white-space:nowrap}
+  .sig .nx{font-size:12px;color:var(--muted);margin-top:4px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
   .tk{font-family:var(--f-mono);font-weight:600;color:var(--text);}
   .nm{color:var(--muted);font-size:12.5px;margin-left:6px;}
-  .sub{margin-top:5px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
-  .pill{font-size:10.5px;font-weight:700;letter-spacing:.03em;border-radius:999px;
-    padding:2px 9px;background:var(--accent-soft);color:var(--accent-ink);
-    font-family:var(--f-mono);}
   .react{font-size:11.5px;color:var(--accent-ink);font-weight:600;}
+  .pill{font-size:10.5px;font-weight:700;letter-spacing:.03em;border-radius:999px;padding:2px 9px;
+    background:var(--accent-soft);color:var(--accent-ink);font-family:var(--f-mono);}
+  .qrow{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:11px 16px;border-top:1px solid var(--line);}
+  .qrow .sub{margin-top:4px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
   .chg{font-family:var(--f-mono);font-weight:600;white-space:nowrap;}
 
-  /* SECTION shell */
+  /* SECTIONS */
   section.band{padding-block:72px;}
-  .kicker{font-family:var(--f-mono);text-transform:uppercase;letter-spacing:.16em;
-    font-size:11px;color:var(--accent-ink);margin:0 0 12px;}
-  .band h2{font-size:clamp(24px,3.2vw,34px);font-weight:700;max-width:22ch;}
-  .band .intro{color:var(--muted);margin:14px 0 0;max-width:60ch;font-size:16px;}
+  section.alt{background:var(--surface-2);border-block:1px solid var(--line);}
+  .kicker{font-family:var(--f-mono);text-transform:uppercase;letter-spacing:.16em;font-size:11px;color:var(--accent-ink);margin:0 0 12px;}
+  .band h2{font-size:clamp(24px,3.2vw,34px);font-weight:700;max-width:24ch;}
+  .band .intro{color:var(--muted);margin:14px 0 0;max-width:62ch;font-size:16px;}
+
+  /* CONTRAST */
+  .vs{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:36px;}
+  .vs .col{border-radius:var(--radius);padding:22px;border:1px solid var(--line);background:var(--surface);}
+  .vs .col.them{background:transparent;border-style:dashed}
+  .vs .col h3{font-size:16px;margin-bottom:10px}
+  .vs ul{margin:0;padding-left:18px;color:var(--muted);font-size:14.5px}
+  .vs li{margin:5px 0}
+  .vs .col.us{border-color:color-mix(in srgb,var(--accent) 45%, var(--line));box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 20%, transparent) inset}
+  .vs .col.us ul{color:var(--text)}
 
   /* FEATURES */
-  .feats{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
-    gap:18px;margin-top:40px;}
-  .feat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
-    padding:22px;display:flex;flex-direction:column;gap:10px;}
-  .feat.hi{border-color:color-mix(in srgb,var(--accent) 45%, var(--line));
-    box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 22%, transparent) inset;}
-  .fi{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;
-    background:var(--accent-soft);color:var(--accent-ink);margin-bottom:4px;}
+  .feats{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:18px;margin-top:40px;}
+  .feat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px;display:flex;flex-direction:column;gap:10px;}
+  .feat.hi{border-color:color-mix(in srgb,var(--accent) 45%, var(--line));box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 22%, transparent) inset;}
+  .fi{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent-ink);margin-bottom:4px;}
   .fi svg{width:21px;height:21px;display:block}
   .feat h3{font-size:17px;font-weight:700;}
   .feat p{color:var(--muted);font-size:14.5px;margin:0;}
-  .newtag{align-self:flex-start;font-family:var(--f-mono);font-size:10px;font-weight:700;
-    letter-spacing:.08em;text-transform:uppercase;color:#fff;background:var(--accent);
-    border-radius:999px;padding:3px 8px;}
+  .tag{align-self:flex-start;font-family:var(--f-mono);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--accent-ink);background:var(--accent-soft);border-radius:999px;padding:3px 8px;}
+  .tag.core{color:#fff;background:var(--accent)}
 
   /* STEPS */
-  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-    gap:18px;margin-top:40px;}
-  .step{position:relative;padding:24px 22px;border-radius:var(--radius);
-    background:var(--surface-2);border:1px solid var(--line);}
-  .step .n{font-family:var(--f-mono);font-size:13px;font-weight:600;color:#fff;
-    background:var(--hero);width:30px;height:30px;border-radius:8px;display:grid;
-    place-items:center;margin-bottom:14px;}
+  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;margin-top:40px;}
+  .step{padding:24px 22px;border-radius:var(--radius);background:var(--surface);border:1px solid var(--line);}
+  .step .n{font-family:var(--f-mono);font-size:13px;font-weight:600;color:#fff;background:var(--hero);width:30px;height:30px;border-radius:8px;display:grid;place-items:center;margin-bottom:14px;}
   .step h3{font-size:16px;font-weight:700;}
   .step p{color:var(--muted);font-size:14px;margin:8px 0 0;}
 
-  /* CTA band */
-  .final{background:var(--hero);color:var(--on-hero);border-radius:20px;
-    padding:clamp(32px,5vw,56px);text-align:center;margin-block:8px;
-    border:1px solid var(--hero-line);}
-  .final h2{color:#fff;font-size:clamp(24px,3.4vw,34px);margin:0 auto;max-width:22ch;}
-  .final p{color:#cdd6e4;margin:14px auto 0;max-width:50ch;}
-  .final .cta{justify-content:center;}
+  /* PRICING */
+  .plans{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:40px;align-items:stretch}
+  .plan{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:26px;display:flex;flex-direction:column;}
+  .plan.plus{border-color:color-mix(in srgb,var(--accent) 50%, var(--line));box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 25%, transparent) inset}
+  .plan h3{font-size:19px}
+  .price{font-family:var(--f-display);font-weight:800;font-size:30px;margin:10px 0 2px}
+  .price small{font-family:var(--f-body);font-weight:500;font-size:14px;color:var(--muted)}
+  .plan .pn{color:var(--muted);font-size:13.5px;margin:0}
+  .plan ul{list-style:none;padding:0;margin:18px 0 22px;display:flex;flex-direction:column;gap:9px;font-size:14.5px}
+  .plan li{display:flex;gap:9px;align-items:flex-start}
+  .plan li::before{content:"";width:16px;height:16px;flex:none;margin-top:3px;border-radius:50%;
+    background:var(--accent-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 8.2l2.3 2.3 4.7-5' fill='none' stroke='%232563eb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px no-repeat}
+  .plan .act{margin-top:auto;display:flex;flex-direction:column;gap:8px}
+  .eb{border:1px dashed color-mix(in srgb,var(--accent) 45%, var(--line));background:var(--accent-soft);border-radius:10px;padding:10px 12px;font-size:13.5px;color:var(--text)}
+  .eb b{color:var(--accent-ink)}
+  .fine2{color:var(--muted);font-size:12.5px;margin:14px 0 0}
 
-  /* FOOTER */
-  footer{border-top:1px solid var(--line);margin-top:8px;
-    padding-block:34px calc(34px + env(safe-area-inset-bottom,0px));}
-  .foot{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:center;
-    justify-content:space-between;}
+  /* FAQ */
+  .faq{margin-top:32px;display:flex;flex-direction:column;gap:10px;max-width:780px}
+  .faq details{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:0 18px}
+  .faq summary{cursor:pointer;list-style:none;padding:16px 0;font-weight:600;display:flex;justify-content:space-between;gap:12px}
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary::after{content:"+";font-family:var(--f-mono);color:var(--muted)}
+  .faq details[open] summary::after{content:"–"}
+  .faq details p{margin:0 0 16px;color:var(--muted);font-size:14.5px}
+
+  /* FINAL */
+  .final{background:var(--hero);color:var(--on-hero);border-radius:20px;padding:clamp(28px,5vw,52px);border:1px solid var(--hero-line);
+    display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:center}
+  .final h2{color:#fff;font-size:clamp(24px,3.2vw,32px);max-width:20ch}
+  .final p{color:#cdd6e4;margin:12px 0 0;max-width:46ch}
+  .final .signup{margin-top:0}
+
+  footer{border-top:1px solid var(--line);margin-top:8px;padding-block:34px calc(34px + env(safe-area-inset-bottom,0px));}
+  .foot{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:center;justify-content:space-between;}
   .foot .co{display:flex;align-items:center;gap:9px;font-weight:600;font-family:var(--f-display);}
   .foot nav{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:14px;}
   .foot nav a{color:var(--muted);text-decoration:none;}
@@ -155,81 +253,95 @@
   .foot .fine{color:var(--muted);font-size:12.5px;width:100%;margin-top:4px;}
 
   @media (max-width:820px){
-    .hero .grid{grid-template-columns:1fr;gap:34px;padding-block:44px 52px;}
-    .hero p.lead{max-width:48ch;}
-    .hero .cardwrap{order:2;}
+    .hero .grid{grid-template-columns:1fr;gap:34px;padding-block:40px 50px;}
+    .vs,.plans,.final{grid-template-columns:1fr;}
   }
-  @media (prefers-reduced-motion:no-preference){
-    .btn,.foot nav a{transition:all .15s ease;}
+  @media (max-width:440px){
+    .signup .fr{flex-direction:column}
+    .signup .btn{width:100%}
+    .nav .login{display:none}
   }
-  a.btn:focus-visible,.foot nav a:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px;}
+  @media (prefers-reduced-motion:no-preference){ .btn,.foot nav a,.chips span{transition:all .15s ease;} }
+  @media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto} }
+  a.btn:focus-visible,button.btn:focus-visible,.foot nav a:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
 </style>
 </head>
 <body>
+
 <header class="nav">
   <div class="wrap row">
-    <span class="brand">
+    <a class="brand" href="/">
       <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#2563eb"/><path d="M8 22V10h6.2c2.7 0 4.4 1.6 4.4 4s-1.7 4-4.4 4H11v4H8Zm3-6.7h2.8c1.2 0 1.9-.6 1.9-1.6s-.7-1.6-1.9-1.6H11v3.2Z" fill="#fff"/><circle cx="23" cy="12" r="2.4" fill="#4ade80"/></svg>
       Portiqo
-    </span>
-    <a class="btn btn-ghost" href="https://portfolio-canvas-ten.vercel.app">Open the app →</a>
+    </a>
+    <div class="links">
+      <a class="login" href="https://portfolio-canvas-ten.vercel.app">Login</a>
+      <a class="btn btn-primary" href="#warteliste" data-track="nav_cta">Warteliste</a>
+    </div>
   </div>
 </header>
 
-<section class="hero">
+<section class="hero" id="warteliste">
   <div class="wrap grid">
     <div>
-      <p class="eyebrow">Portfolio intelligence</p>
-      <h1>Your portfolio, sharp every morning.</h1>
-      <p class="lead">Portiqo researches the news on your holdings every trading day, writes AI stock analyses, and pings you the moment a target price is hit — automatically.</p>
-      <div class="cta">
-        <a class="btn btn-primary" href="https://portfolio-canvas-ten.vercel.app">Open the app</a>
-        <a class="btn btn-ghost" href="#how">How it works</a>
-      </div>
+      <span class="badge"><span class="dot d-g"></span> Early Access · Start ab November</span>
+      <p class="eyebrow va">Ereignis-Monitoring für deine Aktien</p>
+      <p class="eyebrow vb">Dein Morgen-Briefing</p>
+      <p class="eyebrow vc">Portfolio-Monitoring</p>
+      <h1 class="va">Worauf es bei deinen Aktien ankommt – und wann es so weit ist.</h1>
+      <h1 class="vb">Dein Depot. Jeden Morgen auf den Punkt.</h1>
+      <h1 class="vc">Wissen, was zählt. Rechtzeitig handeln. Ruhig schlafen.</h1>
+      <p class="lead va">Portiqo legt für jede deiner Aktien fest, welche Ereignisse über die Investment-These entscheiden – Quartalszahlen, Prognosen, Produktstarts – und prüft sie automatisch zum Termin. Tritt etwas ein, steht es am nächsten Morgen in deinem Postfach.</p>
+      <p class="lead vb">Vor Börsenstart in deinem Postfach: was sich bei deinen Aktien getan hat, warum – und ob es deine These berührt. Recherchiert, per Ampel eingeordnet, in wenigen Minuten gelesen.</p>
+      <p class="lead vc">Portiqo behält deine Aktien für dich im Blick: Es legt fest, worauf es bei jeder ankommt, prüft das automatisch und meldet sich, wenn es darauf ankommt. Kein ständiges Nachschauen, keine Nachrichtenflut.</p>
+
+      <form class="signup" data-form="hero" novalidate>
+        <p class="eb-flag"><span class="dot d-b"></span> <span><b>Early-Bird vorgemerkt</b> – unverbindlich, 69 €/Jahr im ersten Jahr.</span></p>
+        <div class="fr">
+          <label class="hp" aria-hidden="true">Firma <input type="text" name="company" tabindex="-1" autocomplete="off"></label>
+          <input type="email" name="email" required placeholder="deine@email.de" autocomplete="email" aria-label="E-Mail-Adresse">
+          <button class="btn btn-primary" type="submit">Auf die Warteliste</button>
+        </div>
+        <p class="err" role="alert"></p>
+        <p class="hint">Kostenlos und unverbindlich. Du bekommst eine Bestätigungsmail und danach nur Nachrichten zum Start von Portiqo. Abmeldung jederzeit. <a href="/privacy#warteliste">Datenschutz</a></p>
+      </form>
+      <div class="done" aria-live="polite"></div>
+
       <div class="trust">
-        <span><span class="dot d-g"></span> Traffic-light rated news</span>
-        <span><span class="dot d-y"></span> Event context per holding</span>
-        <span><span class="dot d-r"></span> Target-price alerts</span>
+        <span><span class="dot d-b"></span> Aktien & ETFs weltweit</span>
+        <span><span class="dot d-g"></span> Kein Depotzugang nötig</span>
+        <span><span class="dot d-y"></span> Daten in der EU</span>
       </div>
     </div>
 
     <div class="cardwrap">
-      <div class="card" role="img" aria-label="Example of a Portiqo daily briefing with three holdings, traffic-light ratings and a react link">
+      <div class="card" role="img" aria-label="Beispiel einer Portiqo-Morgen-Mail mit zwei Signalen aus dem Ereignis-Monitoring und einer Kursbewegung mit Nachricht">
         <div class="chd">
-          <div class="k">📊 PORTFOLIO · DAILY NEWS</div>
-          <div class="t">Friday · 18 September</div>
+          <div>
+            <div class="k">PORTIQO · MORGEN-BRIEFING</div>
+            <div class="t">Dienstag, 6:15 Uhr</div>
+          </div>
+          <span class="ex">Beispiel</span>
+        </div>
+        <div class="sigs">
+          <p class="lbl">⚑ 2 Signale aus deinem Monitoring</p>
+          <div class="sig ok">
+            <div class="top"><span class="tk">SAP</span><span class="res up">▲ eingetreten</span></div>
+            <div class="ev">Cloud-Backlog wächst im Quartal um mindestens 25 %</div>
+            <div class="nx">Vorschlag: These bestätigt · HOLD <span class="react">Status setzen ↗</span></div>
+          </div>
+          <div class="sig warn">
+            <div class="top"><span class="tk">ASML</span><span class="res" style="color:var(--amber)">● Regel erreicht</span></div>
+            <div class="ev">Kurs unter deiner Einstiegsmarke von 600 €</div>
+            <div class="nx">Deine Regel · Vorschlag: Einstieg prüfen <span class="react">Notiz ↗</span></div>
+          </div>
         </div>
         <div class="qrow">
           <div>
             <span class="tk">ISRG</span><span class="nm">Intuitive Surgical</span>
-            <div class="sub">
-              <span class="dot d-g"></span>
-              <span class="pill">SELL · target $512</span>
-              <span class="react">✏️ React ↗</span>
-            </div>
+            <div class="sub"><span class="dot d-g"></span> Ampel grün · Nachricht zur Kursbewegung</div>
           </div>
-          <div class="chg up">+2.6%</div>
-        </div>
-        <div class="qrow">
-          <div>
-            <span class="tk">DUOL</span><span class="nm">Duolingo</span>
-            <div class="sub">
-              <span class="dot d-r"></span>
-              <span class="pill">HOLD</span>
-              <span class="react">✏️ React ↗</span>
-            </div>
-          </div>
-          <div class="chg down">−3.5%</div>
-        </div>
-        <div class="qrow">
-          <div>
-            <span class="tk">DT</span><span class="nm">Dynatrace</span>
-            <div class="sub">
-              <span class="dot d-y"></span>
-              <span class="pill">PARK · until 31 Dec</span>
-            </div>
-          </div>
-          <div class="chg down">−1.2%</div>
+          <div class="chg up">+2,6 %</div>
         </div>
       </div>
     </div>
@@ -238,55 +350,58 @@
 
 <section class="band">
   <div class="wrap">
-    <p class="kicker">What Portiqo does</p>
-    <h2>From headline to decision — without the manual digging.</h2>
-    <p class="intro">Instead of scanning dozens of sources every morning, you get one tight briefing: only the holdings where something actually moved — with context and a clear next step.</p>
+    <p class="kicker">Was du davon hast</p>
+    <h2>Weniger Rauschen. Mehr Klarheit.</h2>
+    <p class="intro">Die meisten Tools erklären dir hinterher, was passiert ist. Portiqo legt vorher fest, worauf es bei jeder Aktie ankommt – und prüft es für dich.</p>
+    <div class="beats">
+      <div class="beat">
+        <p class="bn">01</p>
+        <h3>Wissen, was zählt</h3>
+        <p>Pro Aktie die drei Ereignisse, die über deine Investment-These entscheiden – mit Termin und möglichem Ausgang. Statt hundert Meldungen nur das, was wirklich etwas bewegt.</p>
+      </div>
+      <div class="beat">
+        <p class="bn">02</p>
+        <h3>Rechtzeitig handeln</h3>
+        <p>Portiqo prüft zum Termin, mit Quelle. Tritt etwas ein, steht es am nächsten Morgen vor Börsenstart ganz oben in deinem Briefing – mit Vorschlag für den nächsten Schritt.</p>
+      </div>
+      <div class="beat">
+        <p class="bn">03</p>
+        <h3>Ruhig schlafen</h3>
+        <p>Kein ständiges Nachschauen, keine Nachrichtenflut. An ruhigen Tagen reicht ein kurzer Blick – und wenn etwas passiert, erfährst du es, ohne danach suchen zu müssen.</p>
+      </div>
+    </div>
+  </div>
+</section>
 
+<section class="band alt">
+  <div class="wrap">
+    <p class="kicker">Die Bausteine</p>
+    <h2>Was Portiqo für dich erledigt.</h2>
     <div class="feats">
+      <div class="feat hi">
+        <div class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 4.4-3.4 8.3-8 9-4.6-.7-8-4.6-8-9V7l8-4Z"/><path d="M8.5 12l2.4 2.4L15.5 10"/></svg></div>
+        <h3>Ereignis-Monitoring</h3>
+        <p>Zu jeder Aktie die Ereignisse, die über die These entscheiden – mit Termin und möglichem Ausgang. Portiqo prüft sie automatisch und hält fest, was eingetreten ist.</p>
+      </div>
       <div class="feat">
         <div class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h7"/></svg></div>
-        <h3>Daily news digest</h3>
-        <p>The relevant stories per holding — traffic-light rated and tied to the event that moved the price. Only when the move earns it.</p>
+        <h3>Morgen-Briefing</h3>
+        <p>An jedem Börsentag vor dem Start: zuerst deine Signale, dann die Aktien, die sich deutlich bewegt haben – mit der Nachricht dahinter, per Ampel eingeordnet.</p>
+      </div>
+      <div class="feat">
+        <div class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7m0-4V3m8 18v-9m0-4V3m8 18v-5m0-4V3M1 14h6m2-6h6m2 8h6"/></svg></div>
+        <h3>Eigene Regeln</h3>
+        <p>Einstiegskurs, Bewertung, Zinsen, Kreditspreads oder eine eigene Recherche-Frage: Du bestimmst, worauf Portiqo achtet – und wie oft.</p>
       </div>
       <div class="feat">
         <div class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5m0 14h16M8 15l3-4 3 2 4-6"/></svg></div>
-        <h3>AI stock analyses</h3>
-        <p>Structured research on a consistent canvas: 13 sections, eight KPI scores, and one clear thesis per stock.</p>
+        <h3>Aktienanalysen</h3>
+        <p>Die Grundlage: je Aktie eine strukturierte Analyse mit 12 Abschnitten, 7 Scores, Szenarien und Bewertungsband. Mit Hinweis, wenn nach neuen Zahlen ein Update fällig ist.</p>
       </div>
       <div class="feat">
-        <div class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v3m0 14v3M2 12h3m14 0h3M12 8a4 4 0 100 8 4 4 0 000-8Z"/></svg></div>
-        <h3>Status &amp; target prices</h3>
-        <p>Set BUY, HOLD or SELL, store target prices and park deadlines — Portiqo alerts you automatically when they hit.</p>
-      </div>
-      <div class="feat hi">
-        <span class="newtag">New</span>
         <div class="fi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H7l-3 3V5Z"/><path d="M8.5 10.5h7M8.5 13h4"/></svg></div>
-        <h3>React from the email</h3>
-        <p>Set status, note and target price right inside the newsletter — inline in Gmail, without ever leaving the mail.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="band" id="how" style="background:var(--surface-2);border-block:1px solid var(--line);">
-  <div class="wrap">
-    <p class="kicker">How it works</p>
-    <h2>Three steps from holding to decision.</h2>
-    <div class="steps">
-      <div class="step">
-        <div class="n">1</div>
-        <h3>Add your holdings</h3>
-        <p>Put your positions on the watchlist — US tech, industrials, China, healthcare, ETFs. Portiqo handles prices and key dates.</p>
-      </div>
-      <div class="step">
-        <div class="n">2</div>
-        <h3>Get your briefing</h3>
-        <p>Every trading day, the digest lands in your inbox early: moves, news and event context — compact and interpreted.</p>
-      </div>
-      <div class="step">
-        <div class="n">3</div>
-        <h3>React &amp; fine-tune</h3>
-        <p>Change status, set a target, leave a note — straight from the email or in the app. The rest runs on its own.</p>
+        <h3>Reagieren aus der Mail</h3>
+        <p>Status, Zielkurs oder Notiz direkt im Briefing setzen. Jede Entscheidung wird festgehalten – so siehst du später, was du wann und warum getan hast.</p>
       </div>
     </div>
   </div>
@@ -294,12 +409,93 @@
 
 <section class="band">
   <div class="wrap">
+    <p class="kicker">So funktioniert's</p>
+    <h2>In drei Schritten zum ersten Signal.</h2>
+    <div class="steps">
+      <div class="step"><div class="n">1</div><h3>Aktien auswählen oder importieren</h3><p>Titel einzeln suchen – oder mit Plus den Depot-Export (CSV) deines Brokers hochladen, Portiqo ordnet die Positionen selbst zu. Kein Depotzugang, keine Kontodaten.</p></div>
+      <div class="step"><div class="n">2</div><h3>Portiqo setzt die Wegmarken</h3><p>Pro Aktie die entscheidenden Ereignisse mit Termin und möglichem Ausgang – abgeleitet aus einer strukturierten Analyse.</p></div>
+      <div class="step"><div class="n">3</div><h3>Morgens entscheiden</h3><p>Tritt etwas ein, steht es ganz oben in deinem Briefing. Du reagierst mit einem Klick – oder lässt es bewusst laufen.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="band alt" id="preise">
+  <div class="wrap">
+    <p class="kicker">Preise</p>
+    <h2>Kostenlos starten. Upgraden, wenn dein Depot wächst.</h2>
+    <div class="plans">
+      <div class="plan">
+        <h3>Free</h3>
+        <div class="price">0 € <small>dauerhaft</small></div>
+        <p class="pn">Für deine wichtigsten Titel.</p>
+        <ul>
+          <li>Bis zu 5 Aktien</li>
+          <li>Ereignis-Monitoring mit Signalen</li>
+          <li>Briefing täglich oder wöchentlich</li>
+          <li>Reagieren aus der Mail</li>
+          <li>Alle vorhandenen Analysen lesen</li>
+        </ul>
+        <div class="act"><a class="btn btn-line" href="#warteliste" data-track="plan_free">Auf die Warteliste</a></div>
+      </div>
+      <div class="plan plus">
+        <h3>Plus</h3>
+        <div class="price">9 € <small>/ Monat (geplant)</small></div>
+        <p class="pn">Für dein ganzes Depot – und deine eigenen Ideen.</p>
+        <ul>
+          <li>Unbegrenzt viele Aktien</li>
+          <li>Ganzes Depot per CSV importieren</li>
+          <li>Eigene Regeln: Einstiegskurs, Bewertung, Makro, Recherche</li>
+          <li>Neue Analysen auf Anfrage</li>
+          <li>Analyse-Update auf Knopfdruck</li>
+          <li>Signal-Historie deiner Entscheidungen</li>
+        </ul>
+        <div class="act">
+          <div class="eb"><b>Early-Bird:</b> 69 €/Jahr im ersten Jahr für die ersten Nutzer. Unverbindlich vormerken – bezahlt wird erst, wenn du dich nach dem Start dafür entscheidest.</div>
+          <button class="btn btn-primary" type="button" data-earlybird>Early-Bird vormerken</button>
+        </div>
+      </div>
+    </div>
+    <p class="fine2">Preise zum Start, Änderungen vorbehalten. Alle Preise inkl. MwSt.</p>
+  </div>
+</section>
+
+<section class="band">
+  <div class="wrap">
+    <p class="kicker">Fragen</p>
+    <h2>Häufige Fragen</h2>
+    <div class="faq">
+      <details><summary>Was ist anders als Kursalarme in meiner Broker-App?</summary><p>Ein Kursalarm sagt dir, dass sich der Kurs bewegt hat. Portiqo sagt dir, ob eingetreten ist, worauf deine Investment-These baut – Zahlen, Prognosen, Produktstarts – mit Quelle und Vorschlag für den nächsten Schritt.</p></details>
+      <details><summary>Wie oft meldet sich Portiqo?</summary><p>So oft, wie du willst: jeden Börsentag vor Handelsbeginn oder einmal pro Woche als kompakter Überblick am Wochenende. Keine Push-Nachrichten zwischendurch, kein Ticker. Was zählt, steht immer oben.</p></details>
+      <details><summary>Ist Portiqo Anlageberatung?</summary><p>Nein. Portiqo recherchiert, ordnet ein und erinnert dich an das, was du selbst festgelegt hast. Kauf- und Verkaufsentscheidungen triffst du. Alle Inhalte dienen ausschließlich der Information.</p></details>
+      <details><summary>Welche Aktien kann ich beobachten?</summary><p>Praktisch jede börsennotierte Aktie und jeden ETF – vom DAX-Wert bis zum US-Nebenwert. Kurse und Nachrichten laufen für jeden Titel sofort. Für die Ereignis-Prüfung braucht Portiqo eine Analyse der Aktie: Über 100 sind fertig, weitere entstehen laufend, und deine Titel kommen auf die Liste.</p></details>
+      <details><summary>Muss ich mein Depot verbinden?</summary><p>Nein. Du wählst deine Aktien aus – mit Plus lädst du alternativ den CSV-Export deines Brokers hoch. Portiqo braucht keinen Zugriff auf dein Depot und keine Kontodaten.</p></details>
+      <details><summary>Wann geht es los?</summary><p>Wir öffnen ab November 2026 in Wellen. Wer auf der Warteliste steht, bekommt zuerst Zugang – Early-Bird-Vormerkungen vorneweg.</p></details>
+      <details><summary>Was passiert mit meiner E-Mail-Adresse?</summary><p>Wir nutzen sie nur, um dich über den Start von Portiqo zu informieren und dir den Zugang zu schicken. Keine Weitergabe, Abmeldung jederzeit über den Link in jeder Mail. Details in der <a href="/privacy#warteliste">Datenschutzerklärung</a>.</p></details>
+    </div>
+  </div>
+</section>
+
+<section class="band" style="padding-top:8px">
+  <div class="wrap">
     <div class="final">
-      <h2>Ready to get your mornings back?</h2>
-      <p>Portiqo does the research; you make the calls. Start with your portfolio in the app.</p>
-      <div class="cta">
-        <a class="btn btn-primary" href="https://portfolio-canvas-ten.vercel.app">Open the app</a>
-        <a class="btn btn-ghost" style="color:var(--on-hero);border-color:var(--hero-line)" href="#how">Learn more</a>
+      <div>
+        <h2 class="va">Lass Portiqo auf deine Aktien aufpassen.</h2>
+        <h2 class="vb">Starte jeden Börsentag mit Klarheit.</h2>
+        <h2 class="vc">Weniger nachschauen. Ruhiger investieren.</h2>
+        <p>Trag dich ein und sichere dir einen frühen Platz. Wir öffnen ab November in Wellen – wer auf der Liste steht, ist zuerst dran.</p>
+      </div>
+      <div>
+        <form class="signup" data-form="final" novalidate>
+          <p class="eb-flag"><span class="dot d-b"></span> <span><b>Early-Bird vorgemerkt</b> – unverbindlich, 69 €/Jahr im ersten Jahr.</span></p>
+          <div class="fr">
+            <label class="hp" aria-hidden="true">Firma <input type="text" name="company" tabindex="-1" autocomplete="off"></label>
+            <input type="email" name="email" required placeholder="deine@email.de" autocomplete="email" aria-label="E-Mail-Adresse">
+            <button class="btn btn-primary" type="submit">Eintragen</button>
+          </div>
+          <p class="err" role="alert"></p>
+          <p class="hint">Bestätigungsmail, danach nur Nachrichten zum Start. Abmeldung jederzeit. <a href="/privacy#warteliste">Datenschutz</a></p>
+        </form>
+        <div class="done" aria-live="polite"></div>
       </div>
     </div>
   </div>
@@ -312,13 +508,129 @@
       Portiqo
     </span>
     <nav>
-      <a href="https://portfolio-canvas-ten.vercel.app">Open the app</a>
-      <a href="#how">How it works</a>
-      <a href="/privacy">Privacy</a>
-      <a href="mailto:info@portiqo.ai">Contact</a>
+      <a href="#warteliste">Warteliste</a>
+      <a href="#preise">Preise</a>
+      <a href="https://portfolio-canvas-ten.vercel.app">Login für Nutzer</a>
+      <a href="/privacy">Datenschutz &amp; Impressum</a>
+      <a href="mailto:info@portiqo.ai">Kontakt</a>
     </nav>
-    <p class="fine">Portiqo — a project by SMART work labs GmbH. Not investment advice; all content is for information only.</p>
+    <p class="fine">Portiqo – ein Projekt der SMART work labs GmbH. Keine Anlageberatung; alle Inhalte dienen ausschließlich der Information. Beispiele auf dieser Seite sind illustrativ.</p>
   </div>
 </footer>
+
+<script>
+(function(){
+  var V = document.documentElement.getAttribute('data-v') || 'a';
+  var qs = new URLSearchParams(location.search);
+  var utm = {};
+  ['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach(function(k){ if (qs.get(k)) utm[k] = qs.get(k).slice(0,100); });
+  var earlyBird = false;
+  var submitted = false;
+
+  function track(ev){
+    try {
+      var body = JSON.stringify({ event: ev, variant: V, utm_source: utm.utm_source || null, utm_campaign: utm.utm_campaign || null });
+      if (navigator.sendBeacon) navigator.sendBeacon('/api/track', new Blob([body], { type: 'application/json' }));
+      else fetch('/api/track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body, keepalive: true });
+    } catch (e) {}
+  }
+  track('view');
+
+  document.querySelectorAll('[data-track]').forEach(function(el){
+    el.addEventListener('click', function(){ track(el.getAttribute('data-track')); });
+  });
+
+  var started = false;
+  document.querySelectorAll('.signup input[type=email]').forEach(function(inp){
+    inp.addEventListener('focus', function(){ if (!started) { started = true; track('form_start'); } });
+  });
+
+  document.querySelectorAll('[data-earlybird]').forEach(function(b){
+    b.addEventListener('click', function(){
+      earlyBird = true;
+      track('earlybird_click');
+      document.querySelectorAll('.eb-flag').forEach(function(f){ f.classList.add('on'); });
+      if (submitted) { sendSurvey({ early_bird: 'ja' }); return; }
+      var hero = document.querySelector('[data-form="hero"]');
+      hero.scrollIntoView({ block: 'center' });
+      setTimeout(function(){ var i = hero.querySelector('input[type=email]'); if (i) i.focus({ preventScroll: true }); }, 350);
+    });
+  });
+
+  var token = null;
+
+  function surveyHtml(){
+    function chips(name, opts, multi){
+      return '<div class="chips">' + opts.map(function(o){
+        return '<label><input type="' + (multi ? 'checkbox' : 'radio') + '" name="' + name + '" value="' + o + '"><span>' + o + '</span></label>';
+      }).join('') + '</div>';
+    }
+    return '' +
+      '<h3>Fast geschafft – bitte bestätige deine E-Mail.</h3>' +
+      '<p>Wir haben dir einen Link geschickt. Erst nach dem Klick stehst du auf der Liste.</p>' +
+      '<form class="survey">' +
+        '<p class="ql" style="margin-bottom:12px">Optional: 5 kurze Fragen, damit wir Portiqo passend für dich bauen.</p>' +
+        '<div class="q"><p class="ql">Wie viele Einzelaktien hast du im Depot?</p>' + chips('stocks', ['keine','1–5','6–15','16–30','über 30']) + '</div>' +
+        '<div class="q"><p class="ql">Was würdest du zuerst nutzen?</p>' + chips('first', ['Ereignis-Monitoring','Morgen-Briefing','Analysen','Eigene Regeln']) + '</div>' +
+        '<div class="q"><p class="ql">Wie oft möchtest du von Portiqo hören?</p>' + chips('cadence', ['jeden Börsentag','einmal pro Woche','nur bei Signalen']) + '</div>' +
+        '<div class="q"><p class="ql">Was nutzt du heute schon? (mehrere möglich)</p>' + chips('tools', ['Parqet','getquin','Finanzfluss Copilot','Excel','App vom Broker','nichts','anderes'], true) + '</div>' +
+        '<div class="q"><p class="ql">Wäre Plus für 69 €/Jahr als Early-Bird interessant?</p>' + chips('early_bird', ['ja','vielleicht','nein']) + '</div>' +
+        '<button class="btn btn-primary" type="submit">Antworten senden</button>' +
+        '<p class="thanks">Danke! Das hilft uns sehr.</p>' +
+      '</form>';
+  }
+
+  function sendSurvey(extra){
+    if (!token) return Promise.resolve();
+    return fetch('/api/survey', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({ token: token }, extra || {})) }).catch(function(){});
+  }
+
+  function showDone(container){
+    document.querySelectorAll('.signup').forEach(function(f){ f.style.display = 'none'; });
+    var box = container;
+    box.innerHTML = surveyHtml();
+    box.classList.add('on');
+    if (earlyBird) { var r = box.querySelector('input[name=early_bird][value=ja]'); if (r) r.checked = true; }
+    var sf = box.querySelector('form.survey');
+    sf.addEventListener('submit', function(e){
+      e.preventDefault();
+      var data = {};
+      ['stocks','first','cadence','early_bird'].forEach(function(n){ var c = sf.querySelector('input[name=' + n + ']:checked'); if (c) data[n] = c.value; });
+      data.tools = Array.prototype.map.call(sf.querySelectorAll('input[name=tools]:checked'), function(c){ return c.value; });
+      var btn = sf.querySelector('button'); btn.disabled = true;
+      sendSurvey(data).then(function(){
+        btn.style.display = 'none';
+        sf.querySelector('.thanks').style.display = 'block';
+        track('survey_submit');
+      });
+    });
+  }
+
+  document.querySelectorAll('form.signup').forEach(function(form){
+    var err = form.querySelector('.err');
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      err.textContent = '';
+      var email = form.querySelector('input[name=email]').value.trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { err.textContent = 'Bitte gib eine gültige E-Mail-Adresse ein.'; return; }
+      var btn = form.querySelector('button[type=submit]'); btn.disabled = true;
+      fetch('/api/waitlist', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, variant: V, early_bird: earlyBird, utm: utm,
+          form: form.getAttribute('data-form'), referrer: document.referrer ? document.referrer.slice(0, 200) : null,
+          company: form.querySelector('input[name=company]').value }) })
+        .then(function(r){ return r.json().then(function(j){ return { ok: r.ok, j: j }; }); })
+        .then(function(res){
+          btn.disabled = false;
+          if (!res.ok || !res.j.ok) { err.textContent = (res.j && res.j.error) || 'Das hat nicht geklappt. Bitte versuch es noch einmal.'; return; }
+          submitted = true;
+          token = res.j.token || null;
+          showDone(form.nextElementSibling);
+        })
+        .catch(function(){ btn.disabled = false; err.textContent = 'Keine Verbindung. Bitte versuch es noch einmal.'; });
+    });
+  });
+})();
+</script>
 </body>
 </html>

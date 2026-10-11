@@ -1,0 +1,10 @@
+{
+  "name": "portiqo-site",
+  "private": true,
+  "version": "1.1.0",
+  "description": "Portiqo Landingpage mit Warteliste (Vercel, statisch + /api)",
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.10.4"
+  }
+}
