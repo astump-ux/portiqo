@@ -10,11 +10,11 @@
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://portiqo.ai/">
 <script>
-  // A/B/C-Variante: ?v=a|b|c erzwingt (z. B. für Anzeigen), sonst je 1/3 pro Seitenaufruf.
+  // Variante: ?v=a|b|c erzwingt; ohne Parameter vorerst immer C (Entscheidung 11.10.2026).
   // Bewusst ohne Cookie/localStorage (kein Einwilligungsbanner nötig).
   (function(){
     var m = location.search.match(/[?&]v=(a|b|c)\b/);
-    var v = m ? m[1] : ['a','b','c'][Math.floor(Math.random() * 3)];
+    var v = m ? m[1] : 'c'; // vorerst nur Variante C (Zufall a/b/c: ['a','b','c'][Math.floor(Math.random() * 3)])
     document.documentElement.setAttribute('data-v', v);
   })();
 </script>
