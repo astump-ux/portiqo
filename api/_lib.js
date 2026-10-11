@@ -19,7 +19,8 @@ function sql() {
 function token() { return crypto.randomBytes(24).toString('base64url'); }
 
 function siteUrl(req) {
-  if (process.env.SITE_URL) return process.env.SITE_URL.replace(/\/$/, '');
+  // SITE_URL nur in Production verwenden – Preview-Links müssen auf die Preview zeigen.
+  if (process.env.SITE_URL && process.env.VERCEL_ENV === 'production') return process.env.SITE_URL.replace(/\/$/, '');
   const host = (req.headers['x-forwarded-host'] || req.headers.host || 'portiqo.ai').split(',')[0].trim();
   return 'https://' + host;
 }
